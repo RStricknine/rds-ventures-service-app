@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react';
-import { serviceRequestsApi, propertiesApi, techniciansApi } from '../services/api';
-import type { ServiceRequest, Property, Technician, UpdateServiceRequestDto } from '../types';
+import { serviceRequestsApi, techniciansApi } from '../services/api';
+import type { ServiceRequest, Technician, UpdateServiceRequestDto } from '../types';
 import { Status, Priority } from '../types';
 
 export default function ServiceRequestsPage() {
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
-  const [properties, setProperties] = useState<Property[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -19,13 +17,11 @@ export default function ServiceRequestsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [requestsRes, propertiesRes, techniciansRes] = await Promise.all([
+      const [requestsRes, techniciansRes] = await Promise.all([
         serviceRequestsApi.getAll(),
-        propertiesApi.getAll(),
         techniciansApi.getAll(),
       ]);
       setRequests(requestsRes.data);
-      setProperties(propertiesRes.data);
       setTechnicians(techniciansRes.data);
       setError(null);
     } catch (err) {
@@ -36,9 +32,9 @@ export default function ServiceRequestsPage() {
     }
   };
 
-  const handleUpdateStatus = async (id: number, status: Status) => {
+  const handleUpdateStatus = async (id: number, status: number) => {
     try {
-      const updateData: UpdateServiceRequestDto = { status };
+      const updateData: UpdateServiceRequestDto = { status: status as Status };
       await serviceRequestsApi.update(id, updateData);
       await loadData();
     } catch (err) {
@@ -53,6 +49,25 @@ export default function ServiceRequestsPage() {
       await loadData();
     } catch (err) {
       console.error('Failed to assign technician', err);
+    }
+  };
+
+  const getPriorityName = (priority: number) => {
+    switch (priority) {
+      case Priority.Low: return 'Low';
+      case Priority.Medium: return 'Medium';
+      case Priority.High: return 'High';
+      case Priority.Critical: return 'Critical';
+      default: return 'Unknown';
+    }
+  };
+
+  const getStatusName = (status: number) => {
+    switch (status) {
+      case Status.Open: return 'Open';
+      case Status.InProgress: return 'In Progress';
+      case Status.Complete: return 'Complete';
+      default: return 'Unknown';
     }
   };
 
@@ -88,15 +103,15 @@ export default function ServiceRequestsPage() {
                 <td>{request.propertyAddress}</td>
                 <td>{request.clientName}</td>
                 <td>
-                  <span className={`priority-badge priority-${Priority[request.priority].toLowerCase()}`}>
-                    {Priority[request.priority]}
+                  <span className={`priority-badge priority-${getPriorityName(request.priority).toLowerCase()}`}>
+                    {getPriorityName(request.priority)}
                   </span>
                 </td>
                 <td>
                   <select
                     value={request.status}
                     onChange={(e) => handleUpdateStatus(request.id, Number(e.target.value))}
-                    className={`status-select status-${Status[request.status].toLowerCase()}`}
+                    className={`status-select status-${getStatusName(request.status).toLowerCase().replace(' ', '')}`}
                   >
                     <option value={Status.Open}>Open</option>
                     <option value={Status.InProgress}>In Progress</option>
@@ -145,8 +160,8 @@ export default function ServiceRequestsPage() {
               <p><strong>Description:</strong> {selectedRequest.description || 'No description'}</p>
               <p><strong>Property:</strong> {selectedRequest.propertyAddress}</p>
               <p><strong>Client:</strong> {selectedRequest.clientName}</p>
-              <p><strong>Priority:</strong> {Priority[selectedRequest.priority]}</p>
-              <p><strong>Status:</strong> {Status[selectedRequest.status]}</p>
+              <p><strong>Priority:</strong> {getPriorityName(selectedRequest.priority)}</p>
+              <p><strong>Status:</strong> {getStatusName(selectedRequest.status)}</p>
               {selectedRequest.assignedTechName && (
                 <p><strong>Assigned to:</strong> {selectedRequest.assignedTechName}</p>
               )}

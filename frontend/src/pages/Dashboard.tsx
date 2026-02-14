@@ -34,6 +34,15 @@ export default function Dashboard() {
     };
   };
 
+  const getStatusName = (status: number) => {
+    switch (status) {
+      case Status.Open: return 'Open';
+      case Status.InProgress: return 'In Progress';
+      case Status.Complete: return 'Complete';
+      default: return 'Unknown';
+    }
+  };
+
   const statusCounts = getStatusCounts();
 
   if (loading) return <div className="loading">Loading...</div>;
@@ -69,8 +78,8 @@ export default function Dashboard() {
             <div key={request.id} className="request-card">
               <div className="request-header">
                 <h4>{request.title}</h4>
-                <span className={`status-badge status-${Status[request.status].toLowerCase()}`}>
-                  {Status[request.status]}
+                <span className={`status-badge status-${getStatusName(request.status).toLowerCase().replace(' ', '')}`}>
+                  {getStatusName(request.status)}
                 </span>
               </div>
               <div className="request-details">

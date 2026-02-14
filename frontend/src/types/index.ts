@@ -1,15 +1,19 @@
-export enum Priority {
-  Low = 0,
-  Medium = 1,
-  High = 2,
-  Critical = 3
-}
+export const Priority = {
+  Low: 0,
+  Medium: 1,
+  High: 2,
+  Critical: 3
+} as const;
 
-export enum Status {
-  Open = 0,
-  InProgress = 1,
-  Complete = 2
-}
+export type Priority = typeof Priority[keyof typeof Priority];
+
+export const Status = {
+  Open: 0,
+  InProgress: 1,
+  Complete: 2
+} as const;
+
+export type Status = typeof Status[keyof typeof Status];
 
 export interface Client {
   id: number;
