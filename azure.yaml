@@ -1,0 +1,5 @@
+name: rds-ventures-svc
+metadata:
+  template: rds-ventures-starter
+infra:
+  path: infra
