@@ -1,5 +1,19 @@
 name: rds-ventures-svc
 metadata:
-  template: rds-ventures-starter
+  template: rds-ventures-service-app@0.0.1
+
 infra:
   path: infra
+  module: main
+
+services:
+  api:
+    project: ./api/RdsVentures.Api
+    language: csharp
+    host: appservice
+  
+  frontend:
+    project: ./frontend
+    language: js
+    host: appservice
+
