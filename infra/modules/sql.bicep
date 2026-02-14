@@ -49,4 +49,3 @@ resource firewallRule 'Microsoft.Sql/servers/firewallRules@2021-11-01' = {
 output serverName string = sqlServer.name
 output databaseName string = sqlDatabase.name
 output administratorLogin string = administratorLogin
-output administratorLoginPassword string = administratorLoginPassword

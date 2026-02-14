@@ -16,6 +16,9 @@ var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = { 'azd-env-name': environmentName }
 
+// Generate a secure password for SQL Server
+var sqlAdminPassword = '${toUpper(substring(uniqueString(resourceToken, subscription().id), 0, 8))}${toLower(substring(uniqueString(subscription().id, resourceToken), 0, 8))}${substring(uniqueString(resourceToken), 0, 4)}!'
+
 // Resource group
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: '${abbrs.resourcesResourceGroups}${environmentName}'
@@ -48,7 +51,7 @@ module sqlServer './modules/sql.bicep' = {
     location: location
     tags: tags
     administratorLogin: 'sqladmin'
-    administratorLoginPassword: 'P@ssw0rd${resourceToken}!' // In production, use Key Vault
+    administratorLoginPassword: sqlAdminPassword
   }
 }
 
@@ -76,6 +79,17 @@ module keyVault './modules/keyVault.bicep' = {
   }
 }
 
+// Store SQL password in Key Vault
+module sqlPasswordSecret './modules/keyVaultSecret.bicep' = {
+  name: 'sqlPasswordSecret'
+  scope: rg
+  params: {
+    keyVaultName: keyVault.outputs.name
+    secretName: 'sql-admin-password'
+    secretValue: sqlAdminPassword
+  }
+}
+
 // Application Insights
 module applicationInsights './modules/applicationInsights.bicep' = {
   name: 'applicationInsights'
@@ -100,7 +114,7 @@ module apiAppService './modules/appService.bicep' = {
     runtimeVersion: '8.0'
     appSettings: {
       APPLICATIONINSIGHTS_CONNECTION_STRING: applicationInsights.outputs.connectionString
-      ConnectionStrings__DefaultConnection: 'Server=tcp:${sqlServer.outputs.serverName}.database.windows.net,1433;Initial Catalog=${sqlServer.outputs.databaseName};Persist Security Info=False;User ID=${sqlServer.outputs.administratorLogin};Password=${sqlServer.outputs.administratorLoginPassword};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+      ConnectionStrings__DefaultConnection: 'Server=tcp:${sqlServer.outputs.serverName}.database.windows.net,1433;Initial Catalog=${sqlServer.outputs.databaseName};Persist Security Info=False;User ID=${sqlServer.outputs.administratorLogin};Password=${sqlAdminPassword};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
       Azure__BlobStorage__ConnectionString: storage.outputs.connectionString
       Azure__BlobStorage__ContainerName: 'attachments'
     }
@@ -119,7 +133,7 @@ module frontendAppService './modules/appService.bicep' = {
     runtimeName: 'node'
     runtimeVersion: '20-lts'
     appSettings: {
-      VITE_API_URL: 'https://${apiAppService.outputs.uri}/api'
+      VITE_API_URL: '${apiAppService.outputs.uri}/api'
     }
   }
 }
